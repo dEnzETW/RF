@@ -324,7 +324,7 @@ createToggle("Gravity Lock", false, function(v)
 
         if v then
             humanoid.UseJumpPower = true
-            humanoid.JumpPower = 20
+            humanoid.JumpPower = 5
         end
     end
 
