@@ -56,13 +56,14 @@ end
 -- Original large platform feature
 if not workspace:FindFirstChild("HansBigPlatform") then
     local p = Instance.new("Part")
-    p.Name = "HansBigPlatform"
-    p.Size = Vector3.new(3000, 10, 3000)
+    p.Name = "HansBigPlatform" 
+    p.Size = Vector3.new(10000, 10, 10000)
     p.Anchored = true
     p.CanCollide = true
     p.Position = Vector3.new(0, -6, 0)
-    p.Material = Enum.Material.Fabric
-    p.CustomPhysicalProperties = PhysicalProperties.new(100, 2, 0, 100, 100)
+    p.Transparency = 1
+    p.Material = Enum.Material.SmoothPlastic
+
     p.Parent = workspace
 end
 
