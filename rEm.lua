@@ -57,7 +57,7 @@ end
 if not workspace:FindFirstChild("HansBigPlatform") then
     local p = Instance.new("Part")
     p.Name = "HansBigPlatform" 
-    p.Size = Vector3.new(40000, 10, 40000)
+    p.Size = Vector3.new(60000, 10, 60000)
     p.Anchored = true
     p.CanCollide = true
     p.Position = Vector3.new(0, -6, 0)
@@ -209,16 +209,22 @@ RunService.Heartbeat:Connect(function(delta)
             end
         end)
     end
-    if getgenv().SpeedEnabled and hum and root then
+    
+    if hum and root then
         root.Anchored = false
-        if hum.MoveDirection.Magnitude > 0 then
-            local pos = root.Position + (hum.MoveDirection * getgenv().SpeedValue * delta)
-            root.CFrame = CFrame.new(pos, pos + root.CFrame.LookVector)
+
+        if getgenv().SpeedEnabled then
+            hum.WalkSpeed = getgenv().SpeedValue
+        else
+            hum.WalkSpeed = 16
         end
     end
+
+        
+            
 end)
 createToggle("Auto Eat", false, function(v) getgenv().AutoFarm = v end)
-createInput("Speed Value", function(t) getgenv().SpeedValue = tonumber(t) or 100 end)
+createInput("Speed Value", function(t) getgenv().SpeedValue = tonumber(t) or 60 end)
 createToggle("Run Speed", false, function(v) getgenv().SpeedEnabled = v end)
 
 -- Auto Sell by UI bar detection
