@@ -312,16 +312,36 @@ task.spawn(function()
     end
 end)
 
--- Gravity Lock
+-- Gravity Lock: normal movement, low jump
 createToggle("Gravity Lock", false, function(v)
     _G.GravityLock = v
-    if v then
-        if not _G.GravLockLoop then
-            _G.GravLockLoop = RunService.Heartbeat:Connect(function() workspace.Gravity = 196.2 end)
+
+    local player = Players.LocalPlayer
+
+    local function applyLowJump(character)
+        local humanoid = character:WaitForChild("Humanoid", 5)
+        if not humanoid then return end
+
+        if v then
+            humanoid.UseJumpPower = true
+            humanoid.JumpPower = 20
         end
-    elseif _G.GravLockLoop then
-        _G.GravLockLoop:Disconnect()
-        _G.GravLockLoop = nil
+    end
+
+    if v then
+        if player.Character then
+            applyLowJump(player.Character)
+        end
+
+        _G.GravityLockConnection =
+            player.CharacterAdded:Connect(function(character)
+                applyLowJump(character)
+            end)
+    else
+        if _G.GravityLockConnection then
+            _G.GravityLockConnection:Disconnect()
+            _G.GravityLockConnection = nil
+        end
     end
 end)
 
