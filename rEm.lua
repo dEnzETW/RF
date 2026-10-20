@@ -18,7 +18,7 @@ local WhitelistedUsers = {
     "L0rdDarkShad0w",
     "chibhothax",
     "jiejisung00",
-    "Mount2702blanc",
+    "Mount2702Blanc",
     "Ibrak4dabra",
     "Chimicaramel",
     "Miskalagi"
