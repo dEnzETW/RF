@@ -63,7 +63,6 @@ if not workspace:FindFirstChild("HansBigPlatform") then
     p.Position = Vector3.new(0, -6, 0)
     p.Transparency = 1
     p.Material = Enum.Material.SmoothPlastic
-
     p.Parent = workspace
 end
 
