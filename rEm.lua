@@ -57,7 +57,7 @@ end
 if not workspace:FindFirstChild("HansBigPlatform") then
     local p = Instance.new("Part")
     p.Name = "HansBigPlatform" 
-    p.Size = Vector3.new(10000, 10, 10000)
+    p.Size = Vector3.new(40000, 10, 40000)
     p.Anchored = true
     p.CanCollide = true
     p.Position = Vector3.new(0, -6, 0)
@@ -313,37 +313,50 @@ task.spawn(function()
 end)
 
 -- Gravity Lock: normal movement, low jump
+
 createToggle("Gravity Lock", false, function(v)
     _G.GravityLock = v
 
     local player = Players.LocalPlayer
 
+    if _G.GravityLockConnection then
+        _G.GravityLockConnection:Disconnect()
+        _G.GravityLockConnection = nil
+    end
+
+    if not v then return end
+
     local function applyLowJump(character)
         local humanoid = character:WaitForChild("Humanoid", 5)
         if not humanoid then return end
 
-        if v then
-            humanoid.UseJumpPower = true
-            humanoid.JumpPower = 5
-        end
-    end
-
-    if v then
-        if player.Character then
-            applyLowJump(player.Character)
-        end
+        humanoid.UseJumpPower = true
+        humanoid.JumpPower = 5
+        humanoid.JumpHeight = 1
 
         _G.GravityLockConnection =
-            player.CharacterAdded:Connect(function(character)
-                applyLowJump(character)
+            RunService.Heartbeat:Connect(function()
+                if not _G.GravityLock or not humanoid.Parent then
+                    return
+                end
+
+                humanoid.UseJumpPower = true
+                humanoid.JumpPower = 5
+                humanoid.JumpHeight = 1
             end)
-    else
-        if _G.GravityLockConnection then
-            _G.GravityLockConnection:Disconnect()
-            _G.GravityLockConnection = nil
-        end
     end
+
+    if player.Character then
+        applyLowJump(player.Character)
+    end
+
+    player.CharacterAdded:Connect(function(character)
+        if _G.GravityLock then
+            applyLowJump(character)
+        end
+    end)
 end)
+
 
 -- God Anti-Ragdoll
 createToggle("God Anti-Ragdoll", false, function(v)
