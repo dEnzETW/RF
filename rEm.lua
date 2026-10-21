@@ -114,7 +114,7 @@ Stroke.Thickness = 1.5
 
 local Scroll = Instance.new("ScrollingFrame", MainFrame)
 Scroll.Size = UDim2.new(1, -10, 1, -40)
-Scroll.Position = UDim2.new(0, 5, 0, 35)
+Scroll.Position = UDim2.new(0, 5, 0, 20)
 Scroll.BackgroundTransparency = 1
 Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
