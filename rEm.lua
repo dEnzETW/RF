@@ -57,7 +57,7 @@ end
 if not workspace:FindFirstChild("HansBigPlatform") then
     local p = Instance.new("Part")
     p.Name = "HansBigPlatform"
-    p.Size = Vector3.new(3000, 10, 3000)
+    p.Size = Vector3.new(30000, 10, 30000)
     p.Anchored = true
     p.CanCollide = true
     p.Position = Vector3.new(0, -6, 0)
