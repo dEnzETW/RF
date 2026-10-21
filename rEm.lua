@@ -102,6 +102,7 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.BackgroundTransparency = 1
 MainFrame.Position = UDim2.new(0.5, -85, 0.3, 0)
 MainFrame.Size = UDim2.new(0, 100, 0, 190)
 MainFrame.Active = true
