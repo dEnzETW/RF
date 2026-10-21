@@ -262,7 +262,7 @@ createToggle("Auto Sell (Bar)", false, function(v) getgenv().AutoSellBar = v end
 getgenv().AttackTP = false
 getgenv().TargetPlayer = ""
 local attackTpConnection = nil
-createInput("Target Name (Attack TP)", function(t) getgenv().TargetPlayer = t end)
+createInput("Target Attack", function(t) getgenv().TargetPlayer = t end)
 local function getRandomPosition()
     return Vector3.new(math.random(-100, 100), math.random(10, 50), math.random(-100, 100))
 end
