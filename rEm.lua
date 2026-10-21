@@ -144,7 +144,7 @@ local function createToggle(name, default, callback)
     local btn = Instance.new("TextButton", Scroll)
     btn.Size = UDim2.new(0.95, 0, 0, 28)
     btn.Font = Enum.Font.GothamSemibold
-    btn.TextSize = 10
+    btn.TextSize = 7
     btn.TextColor3 = Color3.new(1, 1, 1)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
     local enabled = default
