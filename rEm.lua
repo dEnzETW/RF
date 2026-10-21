@@ -62,7 +62,6 @@ if not workspace:FindFirstChild("HansBigPlatform") then
     p.CanCollide = true
     p.Position = Vector3.new(0, -6, 0)
     p.Material = Enum.Material.Fabric
-    p.transparency = 1
     p.CustomPhysicalProperties = PhysicalProperties.new(100, 2, 0, 100, 100)
     p.Parent = workspace
 end
