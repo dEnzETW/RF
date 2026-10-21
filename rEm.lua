@@ -18,10 +18,10 @@ local WhitelistedUsers = {
     "L0rdDarkShad0w",
     "chibhothax",
     "jiejisung00",
-    "Mount2702blanc",
-    "Ibrak4dabra",
-    "Chimicaramel",
-    "Miskalagi"
+    "Mount2702Blanc",
+    "ibrak4dabra",
+    "chimicaramel",
+    "miskalagi"
 }
 
 if not table.find(WhitelistedUsers, LocalPlayer.Name) then
