@@ -57,11 +57,12 @@ end
 if not workspace:FindFirstChild("HansBigPlatform") then
     local p = Instance.new("Part")
     p.Name = "HansBigPlatform"
-    p.Size = Vector3.new(30000, 10, 30000)
+    p.Size = Vector3.new(300000, 10, 300000)
     p.Anchored = true
     p.CanCollide = true
     p.Position = Vector3.new(0, -6, 0)
     p.Material = Enum.Material.Fabric
+    p.transparency = 1
     p.CustomPhysicalProperties = PhysicalProperties.new(100, 2, 0, 100, 100)
     p.Parent = workspace
 end
