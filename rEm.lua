@@ -103,13 +103,13 @@ MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.Position = UDim2.new(0.5, -85, 0.3, 0)
-MainFrame.Size = UDim2.new(0, 150, 0, 250)
+MainFrame.Size = UDim2.new(0, 170, 0, 280)
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Visible = false
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 local Stroke = Instance.new("UIStroke", MainFrame)
-Stroke.Color = Color3.fromRGB(170, 85, 255)
+Stroke.Color = Color3.fromRGB(0, 255, 255)
 Stroke.Thickness = 1.5
 
 local Scroll = Instance.new("ScrollingFrame", MainFrame)
@@ -121,7 +121,7 @@ Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 Scroll.ScrollBarThickness = 2
 Scroll.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 255)
 local Layout = Instance.new("UIListLayout", Scroll)
-Layout.Padding = UDim.new(0, 2)
+Layout.Padding = UDim.new(0, 5)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local MenuBtn = Instance.new("TextButton", ScreenGui)
@@ -129,7 +129,7 @@ MenuBtn.Size = UDim2.new(0, 42, 0, 42)
 MenuBtn.Position = UDim2.new(0, 20, 0.5, -20)
 MenuBtn.Text = "r"
 MenuBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MenuBtn.TextColor3 = Color3.fromRGB(170, 85, 255)
+MenuBtn.TextColor3 = Color3.fromRGB(0, 255, 255)
 MenuBtn.Font = Enum.Font.GothamBold
 MenuBtn.TextSize = 24
 MenuBtn.Draggable = true
@@ -142,7 +142,7 @@ MenuBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.V
 
 local function createToggle(name, default, callback)
     local btn = Instance.new("TextButton", Scroll)
-    btn.Size = UDim2.new(0.95, 0, 0, 26)
+    btn.Size = UDim2.new(0.95, 0, 0, 28)
     btn.Font = Enum.Font.GothamSemibold
     btn.TextSize = 10
     btn.TextColor3 = Color3.new(1, 1, 1)
@@ -159,7 +159,7 @@ end
 
 local function createInput(placeholder, callback)
     local box = Instance.new("TextBox", Scroll)
-    box.Size = UDim2.new(0.95, 0, 0, 26)
+    box.Size = UDim2.new(0.95, 0, 0, 28)
     box.PlaceholderText = placeholder
     box.Text = ""
     box.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
