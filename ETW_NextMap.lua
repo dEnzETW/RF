@@ -2,7 +2,7 @@
 -- Eat the World: Auto Next Map
 -- Panel ON/OFF terpisah dari rEm.lua.
 -- Auto Eat dan Auto Sell di rEm.lua tidak diubah.
-print("ETW NEXT MAP: SCRIPT MULAI")
+
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -42,8 +42,7 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = button
 
-
-local function toggleAutoNextMap()
+button.Activated:Connect(function()
     enabled = not enabled
 
     button.Text = enabled
@@ -56,11 +55,7 @@ local function toggleAutoNextMap()
 
     print("[ETW Auto Next Map] " ..
         (enabled and "ON" or "OFF"))
-end
-
-button.Activated:Connect(toggleAutoNextMap)
-button.MouseButton1Click:Connect(toggleAutoNextMap)
-
+end)
 
 -- Membaca ukuran karakter dan ukuran maksimum
 local function getSizeData()
@@ -166,78 +161,49 @@ local function activateButton(target)
     return false
 end
 
-
--- Proses otomatis: deteksi berulang setiap kali ukuran turun
-local previousCurrent = nil
-local previousMaximum = nil
-local lastTrigger = 0
-local busy = false
-
+-- Proses otomatis
 task.spawn(function()
-        print("[ETW Auto Next Map] Loop berjalan.")
     while task.wait(0.25) do
-        if enabled and not busy then
+        if enabled then
             local current, maximum = getSizeData()
 
             if current and maximum and maximum > 0 then
-                -- Deteksi penurunan dari ukuran penuh
-                local wasFull = previousCurrent
-                    and previousMaximum
-                    and previousCurrent >= previousMaximum
+                if current >= maximum then
+                    wasAtMax = true
 
-                local droppedAfterFull = wasFull
-                    and current < previousCurrent
+                elseif wasAtMax
+                    and previousSize
+                    and current < previousSize
+                    and os.clock() - lastMapSkip >= cooldown then
 
-                if droppedAfterFull then
-    print("[ETW Auto Next Map] Ukuran turun setelah maksimum.")
-
-    if os.clock() - lastTrigger >= cooldown then
-        print("[ETW Auto Next Map] Cooldown selesai, mencoba skip.")
-
-                    busy = true
-                    lastTrigger = os.clock()
-
+                    -- Ukuran turun setelah mencapai maksimum.
                     task.wait(0.75)
 
-                    -- Pastikan fitur masih ON setelah menunggu
-                    if enabled then
-                        local target = findMapSkipButton()
+                    local target = findMapSkipButton()
 
-                        if target then
-                            if activateButton(target) then
-                                print(
-                                    "[ETW Auto Next Map] Percobaan pindah map dikirim."
-                                )
-                            else
-                                warn(
-                                    "[ETW Auto Next Map] Tombol ditemukan tetapi gagal diaktifkan."
-                                )
-                            end
-                        else
-                            warn(
-                                "[ETW Auto Next Map] Tombol map tidak ditemukan."
-                            )
-                        end
+                    if target and activateButton(target) then
+                        lastMapSkip = os.clock()
+                        print(
+                            "[ETW Auto Next Map] Aktivasi tombol dicoba."
+                        )
+                    elseif not target then
+                        warn(
+                            "[ETW Auto Next Map] Tombol map tidak ditemukan."
+                        )
+                    else
+                        warn(
+                            "[ETW Auto Next Map] Tombol tidak dapat diaktifkan."
+                        )
                     end
 
-                    busy = false
+                    wasAtMax = false
                 end
 
-                previousCurrent = current
-                previousMaximum = maximum
-            else
-                previousCurrent = nil
-                previousMaximum = nil
+                previousSize = current
             end
-        elseif not enabled then
-            -- Reset sampel saat OFF supaya bisa mendeteksi siklus baru saat ON
-            previousCurrent = nil
-            previousMaximum = nil
         end
     end
 end)
-
-
 
 print(
     "[ETW Auto Next Map] Loaded. Gunakan panel untuk ON/OFF."
