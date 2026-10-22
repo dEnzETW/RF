@@ -1,7 +1,7 @@
 
--- Eat the World: Auto Next Map
--- Panel ON/OFF terpisah dari rEm.lua.
--- Auto Eat dan Auto Sell di rEm.lua tidak diubah.
+-- Eat the World: Auto Next Map (standalone addon)
+-- Tidak mengubah rEm.lua atau fitur Auto Eat / Auto Sell.
+-- Mendeteksi ukuran maksimum, lalu mencari tombol pindah map setelah ukuran turun.
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -12,59 +12,11 @@ local previousSize = nil
 local lastMapSkip = 0
 local cooldown = 3
 
--- Hapus panel lama jika script dijalankan ulang
-local oldGui = playerGui:FindFirstChild("ETWNextMapToggle")
-if oldGui then
-    oldGui:Destroy()
-end
-
--- Membuat panel ON/OFF
-local gui = Instance.new("ScreenGui")
-gui.Name = "ETWNextMapToggle"
-gui.ResetOnSpawn = false
-gui.Parent = playerGui
-
-local button = Instance.new("TextButton")
-button.Name = "ToggleButton"
-button.Size = UDim2.new(0, 170, 0, 44)
-button.Position = UDim2.new(0, 16, 0.55, 0)
-button.BackgroundColor3 = Color3.fromRGB(35, 150, 85)
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.TextSize = 15
-button.Font = Enum.Font.GothamBold
-button.Text = "Auto Next Map: ON"
-button.Active = true
-button.Draggable = true
-button.Parent = gui
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = button
-
-button.Activated:Connect(function()
-    enabled = not enabled
-
-    button.Text = enabled
-        and "Auto Next Map: ON"
-        or "Auto Next Map: OFF"
-
-    button.BackgroundColor3 = enabled
-        and Color3.fromRGB(35, 150, 85)
-        or Color3.fromRGB(160, 55, 55)
-
-    print("[ETW Auto Next Map] " ..
-        (enabled and "ON" or "OFF"))
-end)
-
--- Membaca ukuran karakter dan ukuran maksimum
 local function getSizeData()
     local character = player.Character
-    local sizeObj = character
-        and character:FindFirstChild("Size")
-
+    local sizeObj = character and character:FindFirstChild("Size")
     local current = sizeObj
-        and (sizeObj:IsA("NumberValue")
-        or sizeObj:IsA("IntValue"))
+        and (sizeObj:IsA("NumberValue") or sizeObj:IsA("IntValue"))
         and sizeObj.Value or nil
 
     local upgrades = player:FindFirstChild("Upgrades")
@@ -77,14 +29,12 @@ local function getSizeData()
     )
 
     local maximum = maxObj
-        and (maxObj:IsA("NumberValue")
-        or maxObj:IsA("IntValue"))
+        and (maxObj:IsA("NumberValue") or maxObj:IsA("IntValue"))
         and maxObj.Value or nil
 
     return current, maximum
 end
 
--- Mencari tombol map berdasarkan nama atau teks
 local function findMapSkipButton()
     local roots = { playerGui }
 
@@ -100,10 +50,7 @@ local function findMapSkipButton()
 
     for _, root in ipairs(roots) do
         for _, obj in ipairs(root:GetDescendants()) do
-            if obj:IsA("GuiButton")
-                and obj.Visible
-                and obj ~= button then
-
+            if obj:IsA("GuiButton") and obj.Visible then
                 local name = string.lower(obj.Name or "")
                 local label = ""
 
@@ -125,11 +72,10 @@ local function findMapSkipButton()
     return nil
 end
 
--- Mencoba mengaktifkan tombol yang ditemukan
-local function activateButton(target)
+local function activateButton(button)
     if typeof(firesignal) == "function" then
         local ok = pcall(function()
-            firesignal(target.Activated)
+            firesignal(button.Activated)
         end)
 
         if ok then
@@ -138,21 +84,16 @@ local function activateButton(target)
     end
 
     if typeof(getconnections) == "function" then
-        local fired = false
-
         local ok = pcall(function()
-            for _, connection in
-                ipairs(getconnections(target.Activated)) do
-
+            for _, connection in ipairs(getconnections(button.Activated)) do
                 if connection.Function then
                     connection:Fire()
-                    fired = true
-                    break
+                    return
                 end
             end
         end)
 
-        if ok and fired then
+        if ok then
             return true
         end
     end
@@ -160,7 +101,6 @@ local function activateButton(target)
     return false
 end
 
--- Proses otomatis
 task.spawn(function()
     while task.wait(0.25) do
         if enabled then
@@ -175,24 +115,20 @@ task.spawn(function()
                     and current < previousSize
                     and os.clock() - lastMapSkip >= cooldown then
 
-                    -- Ukuran turun setelah mencapai maksimum.
+                    -- Ukuran turun setelah maksimum; mungkin baru saja menjual.
                     task.wait(0.75)
 
-                    local target = findMapSkipButton()
+                    local button = findMapSkipButton()
 
-                    if target and activateButton(target) then
-                        lastMapSkip = os.clock()
-                        print(
-                            "[ETW Auto Next Map] Aktivasi tombol dicoba."
-                        )
-                    elseif not target then
-                        warn(
-                            "[ETW Auto Next Map] Tombol map tidak ditemukan."
-                        )
+                    if button then
+                        if activateButton(button) then
+                            lastMapSkip = os.clock()
+                            print("[ETW Auto Next Map] Map button activated.")
+                        else
+                            warn("[ETW Auto Next Map] Tombol ditemukan, tetapi tidak dapat diaktifkan.")
+                        end
                     else
-                        warn(
-                            "[ETW Auto Next Map] Tombol tidak dapat diaktifkan."
-                        )
+                        warn("[ETW Auto Next Map] Tombol pindah map tidak ditemukan.")
                     end
 
                     wasAtMax = false
@@ -204,6 +140,4 @@ task.spawn(function()
     end
 end)
 
-print(
-    "[ETW Auto Next Map] Loaded. Gunakan panel untuk ON/OFF."
-)
+print("[ETW Auto Next Map] Loaded separately. Auto Eat / Auto Sell in rEm.lua are untouched.")
