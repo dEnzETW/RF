@@ -140,8 +140,91 @@ local function getSizeData()
     return current, maximum
 end
 
--- Mencari tombol map berdasarkan nama atau teks
+
+-- Mencari tombol Skip/Next yang benar-benar terlihat
 local function findMapSkipButton()
+    local roots = { playerGui }
+
+    pcall(function()
+        if gethui then
+            table.insert(roots, gethui())
+        end
+    end)
+
+    pcall(function()
+        table.insert(roots, game:GetService("CoreGui"))
+    end)
+
+    local candidates = {}
+
+    for _, root in ipairs(roots) do
+        local ok, descendants = pcall(function()
+            return root:GetDescendants()
+        end)
+
+        if ok then
+            for _, obj in ipairs(descendants) do
+                if obj:IsA("GuiButton")
+                    and obj ~= button
+                    and obj.Visible then
+
+                    local name = string.lower(obj.Name or "")
+                    local label = ""
+
+                    pcall(function()
+                        label = string.lower(obj.Text or "")
+                    end)
+
+                    local combined = name .. " " .. label
+
+                    -- Pastikan tombol dan semua induknya terlihat
+                    local visible = true
+                    local parent = obj.Parent
+
+                    while parent and parent ~= root do
+                        if parent:IsA("GuiObject")
+                            and not parent.Visible then
+                            visible = false
+                            break
+                        end
+
+                        if parent:IsA("ScreenGui")
+                            and not parent.Enabled then
+                            visible = false
+                            break
+                        end
+
+                        parent = parent.Parent
+                    end
+
+                    if visible then
+                        local score = 0
+
+                        if combined:find("skip", 1, true) then
+                            score = 3
+                        elseif combined:find("next", 1, true) then
+                            score = 2
+                        end
+
+                        if score > 0 then
+                            table.insert(candidates, {
+                                target = obj,
+                                score = score
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    table.sort(candidates, function(a, b)
+        return a.score > b.score
+    end)
+
+    return candidates[1] and candidates[1].target or nil
+end
+
     local roots = { playerGui }
 
     pcall(function()
@@ -298,36 +381,3 @@ end)
 
 print("[ETW Auto Next Map] Loaded.")
 
--- DIAGNOSTIK SEMENTARA: daftar tombol saat menu map terbuka
-task.spawn(function()
-    while task.wait(1) do
-        local roots = {playerGui}
-
-        for _, root in ipairs(roots) do
-            for _, obj in ipairs(root:GetDescendants()) do
-                if obj:IsA("GuiButton") and obj.Visible then
-                    local textValue = ""
-
-                    pcall(function()
-                        textValue = obj.Text
-                    end)
-
-                    local name = string.lower(obj.Name .. " " .. textValue)
-
-                    if name:find("kota")
-                        or name:find("map")
-                        or name:find("next")
-                        or name:find("robloxia")
-                        or name:find("blok") then
-                        print(
-                            "[ETW DIAG] "
-                            .. obj:GetFullName()
-                            .. " | Text: "
-                            .. textValue
-                        )
-                    end
-                end
-            end
-        end
-    end
-end)
