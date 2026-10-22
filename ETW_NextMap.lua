@@ -8,9 +8,6 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local enabled = true
-local wasAtMax = false
-local previousSize = nil
-local lastMapSkip = 0
 local cooldown = 3
 
 -- Hapus panel lama jika script dijalankan ulang
@@ -42,7 +39,7 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = button
 
-button.Activated:Connect(function()
+local function toggleAutoNextMap()
     enabled = not enabled
 
     button.Text = enabled
@@ -55,7 +52,10 @@ button.Activated:Connect(function()
 
     print("[ETW Auto Next Map] " ..
         (enabled and "ON" or "OFF"))
-end)
+end
+
+button.Activated:Connect(toggleAutoNextMap)
+button.MouseButton1Click:Connect(toggleAutoNextMap)
 
 -- Membaca ukuran karakter dan ukuran maksimum
 local function getSizeData()
@@ -161,46 +161,65 @@ local function activateButton(target)
     return false
 end
 
--- Proses otomatis
+-- Proses otomatis: deteksi berulang setiap kali ukuran turun
+local previousCurrent = nil
+local previousMaximum = nil
+local lastTrigger = 0
+local busy = false
+
 task.spawn(function()
     while task.wait(0.25) do
-        if enabled then
+        if enabled and not busy then
             local current, maximum = getSizeData()
 
             if current and maximum and maximum > 0 then
-                if current >= maximum then
-                    wasAtMax = true
+                local wasFull = previousCurrent
+                    and previousMaximum
+                    and previousCurrent >= previousMaximum
 
-                elseif wasAtMax
-                    and previousSize
-                    and current < previousSize
-                    and os.clock() - lastMapSkip >= cooldown then
+                local droppedAfterFull = wasFull
+                    and current < previousCurrent
 
-                    -- Ukuran turun setelah mencapai maksimum.
+                if droppedAfterFull
+                    and os.clock() - lastTrigger >= cooldown then
+
+                    busy = true
+                    lastTrigger = os.clock()
+
                     task.wait(0.75)
 
-                    local target = findMapSkipButton()
+                    if enabled then
+                        local target = findMapSkipButton()
 
-                    if target and activateButton(target) then
-                        lastMapSkip = os.clock()
-                        print(
-                            "[ETW Auto Next Map] Aktivasi tombol dicoba."
-                        )
-                    elseif not target then
-                        warn(
-                            "[ETW Auto Next Map] Tombol map tidak ditemukan."
-                        )
-                    else
-                        warn(
-                            "[ETW Auto Next Map] Tombol tidak dapat diaktifkan."
-                        )
+                        if target then
+                            if activateButton(target) then
+                                print(
+                                    "[ETW Auto Next Map] Percobaan pindah map dikirim."
+                                )
+                            else
+                                warn(
+                                    "[ETW Auto Next Map] Tombol ditemukan tetapi gagal diaktifkan."
+                                )
+                            end
+                        else
+                            warn(
+                                "[ETW Auto Next Map] Tombol map tidak ditemukan."
+                            )
+                        end
                     end
 
-                    wasAtMax = false
+                    busy = false
                 end
 
-                previousSize = current
+                previousCurrent = current
+                previousMaximum = maximum
+            else
+                previousCurrent = nil
+                previousMaximum = nil
             end
+        elseif not enabled then
+            previousCurrent = nil
+            previousMaximum = nil
         end
     end
 end)
