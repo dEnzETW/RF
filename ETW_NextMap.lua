@@ -174,6 +174,7 @@ local lastTrigger = 0
 local busy = false
 
 task.spawn(function()
+        print("[ETW Auto Next Map] Loop berjalan.")
     while task.wait(0.25) do
         if enabled and not busy then
             local current, maximum = getSizeData()
