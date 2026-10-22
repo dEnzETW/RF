@@ -216,34 +216,58 @@ local function activateButton(target)
     return false
 end
 
--- Proses otomatis
+
+-- Proses otomatis: maksimum 1.000 siklus
+local completedCycles = 0
+local maxCycles = 1000
+local busy = false
+
 task.spawn(function()
     while task.wait(0.25) do
-        if enabled then
+        if not enabled then
+            wasAtMax = false
+            previousSize = nil
+
+        elseif completedCycles >= maxCycles then
+            enabled = false
+            button.Text = "Auto Next Map: OFF"
+            button.BackgroundColor3 = Color3.fromRGB(160, 55, 55)
+            wasAtMax = false
+            previousSize = nil
+            print("[ETW Auto Next Map] Batas 1.000 siklus tercapai.")
+
+        elseif not busy then
             local current, maximum = getSizeData()
 
-            if current and maximum and maximum > 0 then
+            if not current or not maximum or maximum <= 0 then
+                previousSize = nil
+                wasAtMax = false
+
+            else
                 if current >= maximum then
                     wasAtMax = true
+                end
 
-                elseif wasAtMax
-                    and previousSize
-                    and current < previousSize
+                -- Deteksi ukuran turun setelah mencapai maksimum.
+                -- Tetap menunggu cooldown tanpa kehilangan deteksi.
+                if wasAtMax
+                    and current < maximum
                     and os.clock() - lastMapSkip >= cooldown then
 
+                    busy = true
                     task.wait(0.75)
 
-                    -- Batalkan proses jika sudah OFF
-                    if not enabled then
-                        wasAtMax = false
-                        previousSize = nil
-                    else
+                    if enabled then
+                        completedCycles = completedCycles + 1
+
                         local target = findMapSkipButton()
 
                         if target and activateButton(target) then
                             lastMapSkip = os.clock()
                             print(
-                                "[ETW Auto Next Map] Aktivasi tombol dicoba."
+                                "[ETW Auto Next Map] Percobaan siklus "
+                                .. completedCycles .. "/"
+                                .. maxCycles .. " dikirim."
                             )
                         elseif not target then
                             warn(
@@ -255,17 +279,18 @@ task.spawn(function()
                             )
                         end
 
+                        -- Satu percobaan untuk satu siklus.
                         wasAtMax = false
                     end
+
+                    busy = false
                 end
 
                 previousSize = current
-            else
-                previousSize = nil
-                wasAtMax = false
             end
         end
     end
 end)
+
 
 print("[ETW Auto Next Map] Loaded.")
