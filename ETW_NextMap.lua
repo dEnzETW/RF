@@ -12,7 +12,6 @@ local wasAtMax = false
 local previousSize = nil
 local lastMapSkip = 0
 local cooldown = 3
-local busy = false
 
 -- Hapus panel lama jika script dijalankan ulang
 local oldGui = playerGui:FindFirstChild("ETWNextMapToggle")
@@ -32,15 +31,15 @@ button.Size = UDim2.new(0, 190, 0, 48)
 button.Position = UDim2.new(0, 16, 0.55, 0)
 button.BackgroundColor3 = Color3.fromRGB(35, 150, 85)
 button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.TextSize = 12
+button.TextSize = 15
 button.Font = Enum.Font.GothamBold
-button.TextWrapped = true
 button.Text = "Auto Next Map: ON"
 button.Active = true
 button.Selectable = true
 button.Draggable = true
 button.Parent = gui
 
+-- Status diagnostik
 local statusText = "Memulai"
 
 local function updateStatus(message)
@@ -48,6 +47,7 @@ local function updateStatus(message)
     button.Text =
         (enabled and "Auto Next Map: ON" or "Auto Next Map: OFF")
         .. "\n" .. statusText
+    button.TextSize = 12
 end
 
 updateStatus("Membaca ukuran")
@@ -148,8 +148,8 @@ local function getSizeData()
     return current, maximum
 end
 
--- Mencari tombol dengan prioritas kata Skip,
--- lalu Next, dan terakhir Map.
+-- Mencari tombol Skip Maps
+-- Prioritas: nama Skip, kemudian tombol di pojok kiri bawah.
 local function findMapSkipButton()
     local roots = { playerGui }
 
@@ -163,8 +163,13 @@ local function findMapSkipButton()
         table.insert(roots, game:GetService("CoreGui"))
     end)
 
-    local bestTarget = nil
-    local bestScore = 0
+    local bestNamed = nil
+    local bestNamedScore = 0
+    local bestBottomLeft = nil
+    local bestBottomLeftScore = -math.huge
+
+    local camera = workspace.CurrentCamera
+    local viewport = camera and camera.ViewportSize
 
     for _, root in ipairs(roots) do
         for _, obj in ipairs(root:GetDescendants()) do
@@ -181,25 +186,53 @@ local function findMapSkipButton()
                 end)
 
                 local combined = name .. " " .. label
-                local score = 0
 
                 if combined:find("skip", 1, true) then
-                    score = 100
-                elseif combined:find("next", 1, true) then
-                    score = 50
-                elseif combined:find("map", 1, true) then
-                    score = 10
+                    bestNamed = obj
+                    bestNamedScore = 100
+                elseif combined:find("next", 1, true)
+                    and bestNamedScore < 50 then
+                    bestNamed = obj
+                    bestNamedScore = 50
+                elseif combined:find("map", 1, true)
+                    and bestNamedScore < 10 then
+                    bestNamed = obj
+                    bestNamedScore = 10
                 end
 
-                if score > bestScore then
-                    bestScore = score
-                    bestTarget = obj
+                if viewport and viewport.X > 0 and viewport.Y > 0 then
+                    local pos = obj.AbsolutePosition
+                    local size = obj.AbsoluteSize
+                    local relX = (pos.X + size.X / 2) / viewport.X
+                    local relY = (pos.Y + size.Y / 2) / viewport.Y
+                    local relW = size.X / viewport.X
+                    local relH = size.Y / viewport.Y
+
+                    if relX < 0.16 and relY > 0.82
+                        and relW > 0.02 and relW < 0.12
+                        and relH > 0.035 and relH < 0.16 then
+
+                        local score = (1 - relX) + relY
+
+                        if score > bestBottomLeftScore then
+                            bestBottomLeftScore = score
+                            bestBottomLeft = obj
+                        end
+                    end
                 end
             end
         end
     end
 
-    return bestTarget
+    if bestNamed and bestNamedScore >= 100 then
+        return bestNamed
+    end
+
+    if bestBottomLeft then
+        return bestBottomLeft
+    end
+
+    return bestNamed
 end
 
 -- Mencoba mengaktifkan tombol map
@@ -241,14 +274,13 @@ local function activateButton(target)
     return false
 end
 
--- Proses otomatis berulang
+-- Proses otomatis
 task.spawn(function()
     while task.wait(0.25) do
-        if enabled and not busy then
+        if enabled then
             local current, maximum = getSizeData()
 
             if current ~= nil and maximum ~= nil and maximum > 0 then
-
                 if current >= maximum then
                     wasAtMax = true
                     updateStatus("Maksimum tercapai")
@@ -258,23 +290,21 @@ task.spawn(function()
                     and current < previousSize
                     and os.clock() - lastMapSkip >= cooldown then
 
-                    busy = true
                     updateStatus("Ukuran turun terdeteksi")
-
                     task.wait(0.75)
 
                     if not enabled then
                         wasAtMax = false
                         previousSize = nil
-                        busy = false
                     else
-                        updateStatus("Mencari tombol Skip")
+                        updateStatus("Mencari tombol map")
 
                         local target = findMapSkipButton()
 
                         if target then
                             updateStatus(
                                 "Tombol: " .. tostring(target.Name)
+                                .. " (" .. target.ClassName .. ")"
                             )
 
                             if activateButton(target) then
@@ -288,21 +318,18 @@ task.spawn(function()
                             else
                                 updateStatus("Aktivasi gagal")
                                 warn(
-                                    "[ETW Auto Next Map] Aktivasi gagal."
+                                    "[ETW Auto Next Map] Tombol tidak dapat diaktifkan."
                                 )
                             end
                         else
-                            updateStatus("Tombol Skip tidak ditemukan")
+                            updateStatus("Tombol map tidak ditemukan")
                             warn(
-                                "[ETW Auto Next Map] Tombol tidak ditemukan."
+                                "[ETW Auto Next Map] Tombol map tidak ditemukan."
                             )
                         end
 
                         wasAtMax = false
-                        busy = false
                     end
-                else
-                    updateStatus("Memantau ukuran")
                 end
 
                 previousSize = current
