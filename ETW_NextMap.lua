@@ -187,8 +187,11 @@ task.spawn(function()
                 local droppedAfterFull = wasFull
                     and current < previousCurrent
 
-                if droppedAfterFull
-                    and os.clock() - lastTrigger >= cooldown then
+                if droppedAfterFull then
+    print("[ETW Auto Next Map] Ukuran turun setelah maksimum.")
+
+    if os.clock() - lastTrigger >= cooldown then
+        print("[ETW Auto Next Map] Cooldown selesai, mencoba skip.")
 
                     busy = true
                     lastTrigger = os.clock()
