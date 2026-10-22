@@ -216,56 +216,84 @@ local function activateButton(target)
     return false
 end
 
--- Proses otomatis
+
+-- Proses otomatis: deteksi siklus ukuran berulang
+local previousSize = nil
+local previousMaximum = nil
+local armed = false
+local busy = false
+local lastTrigger = 0
+
 task.spawn(function()
     while task.wait(0.25) do
-        if enabled then
+        if not enabled then
+            armed = false
+            previousSize = nil
+            previousMaximum = nil
+        elseif not busy then
             local current, maximum = getSizeData()
 
-            if current and maximum and maximum > 0 then
-                if current >= maximum then
-                    wasAtMax = true
+            if not current or not maximum or maximum <= 0 then
+                previousSize = nil
+                previousMaximum = nil
+                armed = false
+            else
+                -- Reset deteksi jika maksimum berubah
+                if previousMaximum ~= maximum then
+                    armed = false
+                    previousSize = nil
+                end
 
-                elseif wasAtMax
-                    and previousSize
+                -- Siapkan pemicu ketika ukuran mencapai maksimum
+                if current >= maximum then
+                    armed = true
+                end
+
+                -- Picu satu kali ketika ukuran turun setelah penuh
+                local droppedAfterFull =
+                    armed
+                    and previousSize ~= nil
                     and current < previousSize
-                    and os.clock() - lastMapSkip >= cooldown then
+
+                if droppedAfterFull
+                    and os.clock() - lastTrigger >= cooldown then
+
+                    busy = true
+                    armed = false
+                    lastTrigger = os.clock()
 
                     task.wait(0.75)
 
-                    -- Batalkan proses jika sudah OFF
-                    if not enabled then
-                        wasAtMax = false
-                        previousSize = nil
-                    else
+                    -- Jangan lanjut jika fitur dimatikan
+                    if enabled then
                         local target = findMapSkipButton()
 
-                        if target and activateButton(target) then
-                            lastMapSkip = os.clock()
-                            print(
-                                "[ETW Auto Next Map] Aktivasi tombol dicoba."
-                            )
-                        elseif not target then
-                            warn(
-                                "[ETW Auto Next Map] Tombol map tidak ditemukan."
-                            )
+                        if target then
+                            if activateButton(target) then
+                                print(
+                                    "[ETW Auto Next Map] Percobaan skip dikirim."
+                                )
+                            else
+                                warn(
+                                    "[ETW Auto Next Map] Tombol ditemukan, tetapi gagal diaktifkan."
+                                )
+                            end
                         else
                             warn(
-                                "[ETW Auto Next Map] Tombol tidak dapat diaktifkan."
+                                "[ETW Auto Next Map] Tombol skip tidak ditemukan."
                             )
                         end
-
-                        wasAtMax = false
                     end
+
+                    busy = false
                 end
 
                 previousSize = current
-            else
-                previousSize = nil
-                wasAtMax = false
+                previousMaximum = maximum
             end
         end
     end
 end)
+
 
 print("[ETW Auto Next Map] Loaded.")
