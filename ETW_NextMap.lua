@@ -140,7 +140,7 @@ local function getSizeData()
     return current, maximum
 end
 
--- Mencari tombol Skip/Next yang benar-benar terlihat
+-- Mencari tombol map berdasarkan nama atau teks
 local function findMapSkipButton()
     local roots = { playerGui }
 
@@ -154,77 +154,33 @@ local function findMapSkipButton()
         table.insert(roots, game:GetService("CoreGui"))
     end)
 
-    local candidates = {}
-
     for _, root in ipairs(roots) do
-        local ok, descendants = pcall(function()
-            return root:GetDescendants()
-        end)
+        for _, obj in ipairs(root:GetDescendants()) do
+            if obj:IsA("GuiButton")
+                and obj.Visible
+                and obj ~= button then
 
-        if ok then
-            for _, obj in ipairs(descendants) do
-                if obj:IsA("GuiButton")
-                    and obj ~= button
-                    and obj.Visible then
+                local name = string.lower(obj.Name or "")
+                local label = ""
 
-                    local name = string.lower(obj.Name or "")
-                    local label = ""
+                pcall(function()
+                    label = string.lower(obj.Text or "")
+                end)
 
-                    pcall(function()
-                        label = string.lower(obj.Text or "")
-                    end)
+                local combined = name .. " " .. label
 
-                    local combined = name .. " " .. label
-
-                    -- Pastikan tombol dan semua induknya terlihat
-                    local visible = true
-                    local parent = obj.Parent
-
-                    while parent and parent ~= root do
-                        if parent:IsA("GuiObject")
-                            and not parent.Visible then
-                            visible = false
-                            break
-                        end
-
-                        if parent:IsA("ScreenGui")
-                            and not parent.Enabled then
-                            visible = false
-                            break
-                        end
-
-                        parent = parent.Parent
-                    end
-
-                    if visible then
-                        local score = 0
-
-                        if combined:find("skip", 1, true) then
-                            score = 3
-                        elseif combined:find("next", 1, true) then
-                            score = 2
-                        end
-
-                        if score > 0 then
-                            table.insert(candidates, {
-                                target = obj,
-                                score = score
-                            })
-                        end
-                    end
+                if combined:find("skip")
+                    or combined:find("map")
+                    or combined:find("next") then
+                    return obj
                 end
             end
         end
     end
 
-    table.sort(candidates, function(a, b)
-        return a.score > b.score
-    end)
-
-    return candidates[1] and candidates[1].target or nil
+    return nil
 end
 
-                            
 -- Mencoba mengaktifkan tombol map
 local function activateButton(target)
     if typeof(firesignal) == "function" then
@@ -260,85 +216,56 @@ local function activateButton(target)
     return false
 end
 
-
--- Proses otomatis: deteksi siklus ukuran berulang
-local previousSize = nil
-local previousMaximum = nil
-local armed = false
-local busy = false
-local lastTrigger = 0
-
+-- Proses otomatis
 task.spawn(function()
     while task.wait(0.25) do
-        if not enabled then
-            armed = false
-            previousSize = nil
-            previousMaximum = nil
-        elseif not busy then
+        if enabled then
             local current, maximum = getSizeData()
 
-            if not current or not maximum or maximum <= 0 then
-                previousSize = nil
-                previousMaximum = nil
-                armed = false
-            else
-                -- Reset deteksi jika maksimum berubah
-                if previousMaximum ~= maximum then
-                    armed = false
-                    previousSize = nil
-                end
-
-                -- Siapkan pemicu ketika ukuran mencapai maksimum
+            if current and maximum and maximum > 0 then
                 if current >= maximum then
-                    armed = true
-                end
+                    wasAtMax = true
 
-                -- Picu satu kali ketika ukuran turun setelah penuh
-                local droppedAfterFull =
-                    armed
-                    and previousSize ~= nil
+                elseif wasAtMax
+                    and previousSize
                     and current < previousSize
-
-                if droppedAfterFull
-                    and os.clock() - lastTrigger >= cooldown then
-
-                    busy = true
-                    armed = false
-                    lastTrigger = os.clock()
+                    and os.clock() - lastMapSkip >= cooldown then
 
                     task.wait(0.75)
 
-                    -- Jangan lanjut jika fitur dimatikan
-                    if enabled then
+                    -- Batalkan proses jika sudah OFF
+                    if not enabled then
+                        wasAtMax = false
+                        previousSize = nil
+                    else
                         local target = findMapSkipButton()
 
-                        if target then
-                            if activateButton(target) then
-                                print(
-                                    "[ETW Auto Next Map] Percobaan skip dikirim."
-                                )
-                            else
-                                warn(
-                                    "[ETW Auto Next Map] Tombol ditemukan, tetapi gagal diaktifkan."
-                                )
-                            end
+                        if target and activateButton(target) then
+                            lastMapSkip = os.clock()
+                            print(
+                                "[ETW Auto Next Map] Aktivasi tombol dicoba."
+                            )
+                        elseif not target then
+                            warn(
+                                "[ETW Auto Next Map] Tombol map tidak ditemukan."
+                            )
                         else
                             warn(
-                                "[ETW Auto Next Map] Tombol skip tidak ditemukan."
+                                "[ETW Auto Next Map] Tombol tidak dapat diaktifkan."
                             )
                         end
-                    end
 
-                    busy = false
+                        wasAtMax = false
+                    end
                 end
 
                 previousSize = current
-                previousMaximum = maximum
+            else
+                previousSize = nil
+                wasAtMax = false
             end
         end
     end
 end)
 
-
 print("[ETW Auto Next Map] Loaded.")
-
