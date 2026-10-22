@@ -35,27 +35,36 @@ button.TextSize = 15
 button.Font = Enum.Font.GothamBold
 button.Text = "Auto Next Map: ON"
 button.Active = true
-button.Draggable = true
+button.Selectable = true
+button.Draggable = false
 button.Parent = gui
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = button
 
-button.Activated:Connect(function()
+-- Fungsi ON/OFF
+local function toggleAutoNextMap()
     enabled = not enabled
 
-    button.Text = enabled
-        and "Auto Next Map: ON"
-        or "Auto Next Map: OFF"
+    if enabled then
+        button.Text = "Auto Next Map: ON"
+        button.BackgroundColor3 = Color3.fromRGB(35, 150, 85)
+        print("[ETW Auto Next Map] ON")
+    else
+        button.Text = "Auto Next Map: OFF"
+        button.BackgroundColor3 = Color3.fromRGB(160, 55, 55)
 
-    button.BackgroundColor3 = enabled
-        and Color3.fromRGB(35, 150, 85)
-        or Color3.fromRGB(160, 55, 55)
+        -- Reset deteksi saat OFF
+        wasAtMax = false
+        previousSize = nil
 
-    print("[ETW Auto Next Map] " ..
-        (enabled and "ON" or "OFF"))
-end)
+        print("[ETW Auto Next Map] OFF")
+    end
+end
+
+-- Gunakan satu event klik agar tidak toggle dua kali
+button.MouseButton1Click:Connect(toggleAutoNextMap)
 
 -- Membaca ukuran karakter dan ukuran maksimum
 local function getSizeData()
@@ -126,7 +135,7 @@ local function findMapSkipButton()
     return nil
 end
 
--- Mencoba mengaktifkan tombol yang ditemukan
+-- Mencoba mengaktifkan tombol map
 local function activateButton(target)
     if typeof(firesignal) == "function" then
         local ok = pcall(function()
@@ -176,35 +185,41 @@ task.spawn(function()
                     and current < previousSize
                     and os.clock() - lastMapSkip >= cooldown then
 
-                    -- Ukuran turun setelah mencapai maksimum.
                     task.wait(0.75)
 
-                    local target = findMapSkipButton()
-
-                    if target and activateButton(target) then
-                        lastMapSkip = os.clock()
-                        print(
-                            "[ETW Auto Next Map] Aktivasi tombol dicoba."
-                        )
-                    elseif not target then
-                        warn(
-                            "[ETW Auto Next Map] Tombol map tidak ditemukan."
-                        )
+                    -- Batalkan proses jika sudah OFF
+                    if not enabled then
+                        wasAtMax = false
+                        previousSize = nil
                     else
-                        warn(
-                            "[ETW Auto Next Map] Tombol tidak dapat diaktifkan."
-                        )
-                    end
+                        local target = findMapSkipButton()
 
-                    wasAtMax = false
+                        if target and activateButton(target) then
+                            lastMapSkip = os.clock()
+                            print(
+                                "[ETW Auto Next Map] Aktivasi tombol dicoba."
+                            )
+                        elseif not target then
+                            warn(
+                                "[ETW Auto Next Map] Tombol map tidak ditemukan."
+                            )
+                        else
+                            warn(
+                                "[ETW Auto Next Map] Tombol tidak dapat diaktifkan."
+                            )
+                        end
+
+                        wasAtMax = false
+                    end
                 end
 
                 previousSize = current
+            else
+                previousSize = nil
+                wasAtMax = false
             end
         end
     end
 end)
 
-print(
-    "[ETW Auto Next Map] Loaded. Gunakan panel untuk ON/OFF."
-)
+print("[ETW Auto Next Map] Loaded.")
