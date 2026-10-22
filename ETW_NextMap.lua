@@ -2,7 +2,7 @@
 -- Eat the World: Auto Next Map
 -- Panel ON/OFF terpisah dari rEm.lua.
 -- Auto Eat dan Auto Sell di rEm.lua tidak diubah.
-
+print("ETW NEXT MAP: SCRIPT MULAI")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
