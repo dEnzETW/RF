@@ -42,7 +42,8 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = button
 
-button.Activated:Connect(function()
+
+local function toggleAutoNextMap()
     enabled = not enabled
 
     button.Text = enabled
@@ -55,7 +56,11 @@ button.Activated:Connect(function()
 
     print("[ETW Auto Next Map] " ..
         (enabled and "ON" or "OFF"))
-end)
+end
+
+button.Activated:Connect(toggleAutoNextMap)
+button.MouseButton1Click:Connect(toggleAutoNextMap)
+
 
 -- Membaca ukuran karakter dan ukuran maksimum
 local function getSizeData()
