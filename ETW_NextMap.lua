@@ -88,7 +88,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
-
 -- Fungsi ON/OFF
 local function toggleAutoNextMap()
     enabled = not enabled
@@ -140,7 +139,7 @@ local function getSizeData()
     return current, maximum
 end
 
--- Mencari tombol map berdasarkan nama atau teks
+-- Mencari tombol Skip/Next lebih dahulu; "map" hanya pilihan cadangan
 local function findMapSkipButton()
     local roots = { playerGui }
 
@@ -154,31 +153,48 @@ local function findMapSkipButton()
         table.insert(roots, game:GetService("CoreGui"))
     end)
 
+    local bestTarget = nil
+    local bestScore = 0
+
     for _, root in ipairs(roots) do
-        for _, obj in ipairs(root:GetDescendants()) do
-            if obj:IsA("GuiButton")
-                and obj.Visible
-                and obj ~= button then
+        local ok, descendants = pcall(function()
+            return root:GetDescendants()
+        end)
 
-                local name = string.lower(obj.Name or "")
-                local label = ""
+        if ok then
+            for _, obj in ipairs(descendants) do
+                if obj:IsA("GuiButton")
+                    and obj.Visible
+                    and obj ~= button then
 
-                pcall(function()
-                    label = string.lower(obj.Text or "")
-                end)
+                    local name = string.lower(obj.Name or "")
+                    local label = ""
 
-                local combined = name .. " " .. label
+                    pcall(function()
+                        label = string.lower(obj.Text or "")
+                    end)
 
-                if combined:find("skip")
-                    or combined:find("map")
-                    or combined:find("next") then
-                    return obj
+                    local combined = name .. " " .. label
+                    local score = 0
+
+                    if combined:find("skip", 1, true) then
+                        score = 3
+                    elseif combined:find("next", 1, true) then
+                        score = 2
+                    elseif combined:find("map", 1, true) then
+                        score = 1
+                    end
+
+                    if score > bestScore then
+                        bestTarget = obj
+                        bestScore = score
+                    end
                 end
             end
         end
     end
 
-    return nil
+    return bestTarget
 end
 
 -- Mencoba mengaktifkan tombol map
@@ -216,8 +232,9 @@ local function activateButton(target)
     return false
 end
 
-
 -- Proses otomatis: maksimum 1.000 siklus
+-- Satu percobaan Skip Maps per siklus maksimum -> ukuran turun setelah dijual.
+-- Jika tombol belum ditemukan, deteksi tetap menunggu dan mencari lagi.
 local completedCycles = 0
 local maxCycles = 1000
 local busy = false
@@ -239,48 +256,48 @@ task.spawn(function()
         elseif not busy then
             local current, maximum = getSizeData()
 
-            if not current or not maximum or maximum <= 0 then
+            if current == nil or maximum == nil or maximum <= 0 then
                 previousSize = nil
                 wasAtMax = false
-
             else
                 if current >= maximum then
                     wasAtMax = true
                 end
 
-                -- Deteksi ukuran turun setelah mencapai maksimum.
-                -- Tetap menunggu cooldown tanpa kehilangan deteksi.
-                if wasAtMax
+                local droppedAfterFull =
+                    wasAtMax
+                    and previousSize ~= nil
+                    and current < previousSize
                     and current < maximum
+
+                if droppedAfterFull
                     and os.clock() - lastMapSkip >= cooldown then
 
                     busy = true
-                    task.wait(0.75)
 
-                    if enabled then
-                        completedCycles = completedCycles + 1
-
-                        local target = findMapSkipButton()
-
-                        if target and activateButton(target) then
-                            lastMapSkip = os.clock()
-                            print(
-                                "[ETW Auto Next Map] Percobaan siklus "
-                                .. completedCycles .. "/"
-                                .. maxCycles .. " dikirim."
-                            )
-                        elseif not target then
-                            warn(
-                                "[ETW Auto Next Map] Tombol map tidak ditemukan."
-                            )
-                        else
-                            warn(
-                                "[ETW Auto Next Map] Tombol tidak dapat diaktifkan."
-                            )
+                    -- Tunggu sampai tombol yang cocok muncul.
+                    -- OFF membatalkan proses menunggu.
+                    local target = nil
+                    while enabled and target == nil do
+                        target = findMapSkipButton()
+                        if target == nil then
+                            task.wait(0.5)
                         end
+                    end
 
-                        -- Satu percobaan untuk satu siklus.
+                    if enabled and target and activateButton(target) then
+                        completedCycles = completedCycles + 1
+                        lastMapSkip = os.clock()
                         wasAtMax = false
+
+                        print(
+                            "[ETW Auto Next Map] Percobaan siklus "
+                            .. completedCycles .. "/" .. maxCycles .. " dikirim."
+                        )
+                    elseif enabled then
+                        warn(
+                            "[ETW Auto Next Map] Tombol ditemukan, tetapi aktivasi gagal."
+                        )
                     end
 
                     busy = false
@@ -291,6 +308,5 @@ task.spawn(function()
         end
     end
 end)
-
 
 print("[ETW Auto Next Map] Loaded.")
