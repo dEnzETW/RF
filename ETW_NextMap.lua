@@ -297,3 +297,37 @@ end)
 
 
 print("[ETW Auto Next Map] Loaded.")
+
+-- DIAGNOSTIK SEMENTARA: daftar tombol saat menu map terbuka
+task.spawn(function()
+    while task.wait(1) do
+        local roots = {playerGui}
+
+        for _, root in ipairs(roots) do
+            for _, obj in ipairs(root:GetDescendants()) do
+                if obj:IsA("GuiButton") and obj.Visible then
+                    local textValue = ""
+
+                    pcall(function()
+                        textValue = obj.Text
+                    end)
+
+                    local name = string.lower(obj.Name .. " " .. textValue)
+
+                    if name:find("kota")
+                        or name:find("map")
+                        or name:find("next")
+                        or name:find("robloxia")
+                        or name:find("blok") then
+                        print(
+                            "[ETW DIAG] "
+                            .. obj:GetFullName()
+                            .. " | Text: "
+                            .. textValue
+                        )
+                    end
+                end
+            end
+        end
+    end
+end)
