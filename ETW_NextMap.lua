@@ -140,7 +140,6 @@ local function getSizeData()
     return current, maximum
 end
 
-
 -- Mencari tombol Skip/Next yang benar-benar terlihat
 local function findMapSkipButton()
     local roots = { playerGui }
@@ -225,45 +224,7 @@ local function findMapSkipButton()
     return candidates[1] and candidates[1].target or nil
 end
 
-    local roots = { playerGui }
-
-    pcall(function()
-        if gethui then
-            table.insert(roots, gethui())
-        end
-    end)
-
-    pcall(function()
-        table.insert(roots, game:GetService("CoreGui"))
-    end)
-
-    for _, root in ipairs(roots) do
-        for _, obj in ipairs(root:GetDescendants()) do
-            if obj:IsA("GuiButton")
-                and obj.Visible
-                and obj ~= button then
-
-                local name = string.lower(obj.Name or "")
-                local label = ""
-
-                pcall(function()
-                    label = string.lower(obj.Text or "")
-                end)
-
-                local combined = name .. " " .. label
-
-                if combined:find("skip")
-                    or combined:find("map")
-                    or combined:find("next") then
-                    return obj
-                end
-            end
-        end
-    end
-
-    return nil
-end
-
+                            
 -- Mencoba mengaktifkan tombol map
 local function activateButton(target)
     if typeof(firesignal) == "function" then
