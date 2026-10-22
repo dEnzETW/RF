@@ -55,7 +55,6 @@ local function toggleAutoNextMap()
 end
 
 button.Activated:Connect(toggleAutoNextMap)
-button.MouseButton1Click:Connect(toggleAutoNextMap)
 
 -- Membaca ukuran karakter dan ukuran maksimum
 local function getSizeData()
