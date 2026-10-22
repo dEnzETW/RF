@@ -36,7 +36,7 @@ button.Font = Enum.Font.GothamBold
 button.Text = "Auto Next Map: ON"
 button.Active = true
 button.Selectable = true
-button.Draggable = false
+button.Draggable = true
 button.Parent = gui
 
 local corner = Instance.new("UICorner")
